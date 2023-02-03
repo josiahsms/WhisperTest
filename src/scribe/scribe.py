@@ -1,8 +1,6 @@
 import io
 import tempfile
-from typing import Any
 
-import numpy as np
 import pyperclip
 import streamlit as st
 import whisper
@@ -35,28 +33,10 @@ class Scribe:
             pyperclip.copy(result)  # type: ignore
 
     @st.experimental_memo
-    def process_audio(_self, audio_file: io.BytesIO):
-        audio = _self.load_audio(audio_file)
-        result = _self.transcribe(audio)
-        return result
-
-    def load_audio(self, file: io.BytesIO) -> np.ndarray[Any, Any]:
+    def process_audio(_self, audio_file: io.BytesIO) -> str:
         with tempfile.NamedTemporaryFile() as tmp:
-            tmp.write(file.read())
+            tmp.write(audio_file.read())
 
-            audio = whisper.load_audio(tmp.name)
+            result = _self.model.transcribe(tmp.name)  # type: ignore
 
-        return audio
-
-    def transcribe(self, audio: np.ndarray[Any, Any]) -> str:
-        audio = whisper.pad_or_trim(audio)  # type: ignore
-
-        mel = whisper.log_mel_spectrogram(audio).to(self.model.device)  # type: ignore
-
-        result = whisper.decode(
-            self.model,
-            mel,
-            self.options,
-        )
-
-        return result.text  # type: ignore
+        return result["text"]  # type: ignore
